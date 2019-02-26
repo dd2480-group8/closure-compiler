@@ -152,6 +152,7 @@ public class ModificationVisitor implements Visitor<JSType> {
     if (!visitProperties
         || objType.isNominalType()
         || objType instanceof TemplatizedType
+        || objType instanceof TemplateType
         || objType instanceof ProxyObjectType
         || !objType.isRecordType()) {
       return objType;
