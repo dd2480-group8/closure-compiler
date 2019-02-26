@@ -274,9 +274,7 @@ public abstract class ChainableReverseAbstractInterpreter
       }
 
       @Override
-      public JSType caseNamedType(NamedType type) {
-        return caseProxyObjectType(type);
-      }
+      public JSType caseNamedType(NamedType type) {return caseObjectType(type); }
 
       @Override
       public JSType caseProxyObjectType(ProxyObjectType type) {
@@ -375,7 +373,7 @@ public abstract class ChainableReverseAbstractInterpreter
 
         @Override
         public JSType caseNamedType(NamedType type) {
-          return caseProxyObjectType(type);
+          return caseObjectType(type);
         }
 
         @Override
@@ -464,7 +462,7 @@ public abstract class ChainableReverseAbstractInterpreter
 
     @Override
     public JSType caseNamedType(NamedType type) {
-      return caseProxyObjectType(type);
+      return caseObjectType(type);
     }
 
     @Override

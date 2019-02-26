@@ -45,8 +45,10 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.javascript.rhino.ErrorReporter;
+import com.google.javascript.rhino.JSDocInfo;
 import com.google.javascript.rhino.Node;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nullable;
 
@@ -82,7 +84,7 @@ import javax.annotation.Nullable;
  * much that has to be changed.<p>
  *
  */
-public final class NamedType extends ProxyObjectType {
+public final class NamedType extends ObjectType {
   private static final long serialVersionUID = 1L;
 
   static int nominalHashCode(ObjectType type) {
@@ -90,6 +92,9 @@ public final class NamedType extends ProxyObjectType {
     String name = checkNotNull(type.getReferenceName());
     return name.hashCode();
   }
+
+  private JSType referencedType;
+  private ObjectType referencedObjType;
 
   private final String reference;
   private final String sourceName;
@@ -134,14 +139,229 @@ public final class NamedType extends ProxyObjectType {
       int lineno,
       int charno,
       ImmutableList<JSType> templateTypes) {
-    super(registry, registry.getNativeObjectType(JSTypeNative.UNKNOWN_TYPE));
+    super(registry, null);
+    setReferencedType(checkNotNull(registry.getNativeObjectType(JSTypeNative.UNKNOWN_TYPE)));
     checkNotNull(reference);
+
     this.resolutionScope = scope;
     this.reference = reference;
     this.sourceName = sourceName;
     this.lineno = lineno;
     this.charno = charno;
     this.templateTypes = templateTypes;
+  }
+
+  @Override
+  public final HasPropertyKind getPropertyKind(String propertyName, boolean autobox) {
+    return referencedType.getPropertyKind(propertyName, autobox);
+  }
+
+  @Override
+  final PropertyMap getPropertyMap() {
+    return referencedObjType == null
+            ? PropertyMap.immutableEmptyMap() : referencedObjType.getPropertyMap();
+  }
+
+  @Override
+  public final boolean matchesNumberContext() {
+    return referencedType.matchesNumberContext();
+  }
+
+  @Override
+  public final boolean matchesStringContext() {
+    return referencedType.matchesStringContext();
+  }
+
+  @Override
+  public final boolean matchesSymbolContext() {
+    return referencedType.matchesSymbolContext();
+  }
+
+  @Override
+  public final boolean matchesObjectContext() {
+    return referencedType.matchesObjectContext();
+  }
+
+  @Override
+  public final boolean canBeCalled() {
+    return referencedType.canBeCalled();
+  }
+
+  @Override
+  public final boolean isStructuralType() {
+    return referencedType.isStructuralType();
+  }
+
+  @Override
+  public final boolean isNoType() {
+    return referencedType.isNoType();
+  }
+
+  @Override
+  public final boolean isNoObjectType() { return referencedType.isNoObjectType(); }
+
+  @Override
+  public final boolean isNoResolvedType() { return referencedType.isNoResolvedType(); }
+
+  @Override
+  public final boolean isUnknownType() { return referencedType.isUnknownType(); }
+
+  @Override
+  public final boolean isCheckedUnknownType() { return referencedType.isCheckedUnknownType(); }
+
+  @Override
+  public final boolean isNullable() { return referencedType.isNullable(); }
+
+  @Override
+  public final boolean isVoidable() { return referencedType.isVoidable(); }
+
+  @Override
+  public final EnumType toMaybeEnumType() { return referencedType.toMaybeEnumType(); }
+
+  @Override
+  public final boolean isConstructor() { return referencedType.isConstructor(); }
+
+  @Override
+  public final boolean isInstanceType() {
+    return referencedType.isInstanceType();
+  }
+
+  @Override
+  public final boolean isInterface() {
+    return referencedType.isInterface();
+  }
+
+  @Override
+  public final boolean isOrdinaryFunction() {
+    return referencedType.isOrdinaryFunction();
+  }
+
+  @Override
+  public final boolean isAllType() {
+    return referencedType.isAllType();
+  }
+
+  @Override
+  public final boolean isStruct() {
+    return referencedType.isStruct();
+  }
+
+  @Override
+  public final boolean isDict() {
+    return referencedType.isDict();
+  }
+
+  @Override
+  public final boolean isNativeObjectType() {
+    return referencedObjType == null
+            ? false : referencedObjType.isNativeObjectType();
+  }
+
+  @Override
+  public final RecordType toMaybeRecordType() {
+    return referencedType.toMaybeRecordType();
+  }
+
+  @Override
+  public final UnionType toMaybeUnionType() {
+    return referencedType.toMaybeUnionType();
+  }
+
+  @Override
+  public final FunctionType toMaybeFunctionType() {
+    return referencedType.toMaybeFunctionType();
+  }
+
+  @Override
+  public final EnumElementType toMaybeEnumElementType() {
+    return referencedType.toMaybeEnumElementType();
+  }
+
+  @Override
+  public final TernaryValue testForEquality(JSType that) {
+    return referencedType.testForEquality(that);
+  }
+
+  @Override
+  public boolean isSubtype(JSType that) {
+    return referencedType.isSubtype(that, ImplCache.create(), SubtypingMode.NORMAL);
+  }
+
+  @Override
+  protected boolean isSubtype(JSType that,
+                              ImplCache implicitImplCache, SubtypingMode subtypingMode) {
+    return referencedType.isSubtype(that, implicitImplCache, subtypingMode);
+  }
+
+  @Override
+  public final FunctionType getOwnerFunction() {
+    return referencedObjType == null
+            ? null : referencedObjType.getOwnerFunction();
+  }
+
+  @Override
+  public Iterable<ObjectType> getCtorImplementedInterfaces() {
+    return referencedObjType == null ? Collections.<ObjectType>emptyList() :
+            referencedObjType.getCtorImplementedInterfaces();
+  }
+
+  @Override
+  public Iterable<ObjectType> getCtorExtendedInterfaces() {
+    return this.referencedObjType == null
+            ? Collections.<ObjectType>emptyList()
+            : this.referencedObjType.getCtorExtendedInterfaces();
+  }
+
+  @Override
+  public final ObjectType getImplicitPrototype() {
+    return referencedObjType == null ? null :
+            referencedObjType.getImplicitPrototype();
+  }
+
+  @Override
+  public final boolean removeProperty(String name) {
+    return referencedObjType == null ? false :
+            referencedObjType.removeProperty(name);
+  }
+
+  @Override
+  protected JSType findPropertyTypeWithoutConsideringTemplateTypes(String propertyName) {
+    return referencedType.findPropertyType(propertyName);
+  }
+
+  @Override
+  public final JSDocInfo getJSDocInfo() {
+    return referencedType.getJSDocInfo();
+  }
+
+  @Override
+  public final void setJSDocInfo(JSDocInfo info) {
+    if (referencedObjType != null) {
+      referencedObjType.setJSDocInfo(info);
+    }
+  }
+
+  @Override
+  public final void setPropertyJSDocInfo(String propertyName, JSDocInfo info) {
+    if (referencedObjType != null) {
+      referencedObjType.setPropertyJSDocInfo(propertyName, info);
+    }
+  }
+
+  @Override
+  public final FunctionType getConstructor() {
+    return referencedObjType == null ? null :
+            referencedObjType.getConstructor();
+  }
+
+  public final <T> T visitReferenceType(Visitor<T> visitor) {
+    return referencedType.visit(visitor);
+  }
+
+
+  @Override
+  public final String toDebugHashCodeString() {
+    return "{proxy:" + referencedType.toDebugHashCodeString() + "}";
   }
 
   @Override
@@ -163,8 +383,8 @@ public final class NamedType extends ProxyObjectType {
               propertyName, type, inferred, propertyNode));
       return true;
     } else {
-      return super.defineProperty(
-          propertyName, type, inferred, propertyNode);
+      return referencedObjType == null
+              || referencedObjType.defineProperty(propertyName, type, inferred, propertyNode);
     }
   }
 
@@ -183,6 +403,64 @@ public final class NamedType extends ProxyObjectType {
   /** Returns the type to which this refers (which is unknown if unresolved). */
   public JSType getReferencedType() {
     return getReferencedTypeInternal();
+  }
+
+  final JSType getReferencedTypeInternal() {
+    return referencedType;
+  }
+
+  final ObjectType getReferencedObjTypeInternal() {
+    return referencedObjType;
+  }
+
+  final void setReferencedType(JSType referencedType) {
+    this.referencedType = referencedType;
+    if (referencedType instanceof ObjectType) {
+      this.referencedObjType = (ObjectType) referencedType;
+    } else {
+      this.referencedObjType = null;
+    }
+  }
+
+  @Override
+  public final JSType getTypeOfThis() {
+    if (referencedObjType != null) {
+      return referencedObjType.getTypeOfThis();
+    }
+    return super.getTypeOfThis();
+  }
+
+  @Override
+  public final JSType collapseUnion() {
+    if (referencedType.isUnionType()) {
+      return referencedType.collapseUnion();
+    }
+    return this;
+  }
+
+  @Override
+  public final void matchConstraint(JSType constraint) {
+    referencedType.matchConstraint(constraint);
+  }
+
+  @Override
+  public TemplatizedType toMaybeTemplatizedType() {
+    return referencedType.toMaybeTemplatizedType();
+  }
+
+  @Override
+  public TemplateType toMaybeTemplateType() {
+    return referencedType.toMaybeTemplateType();
+  }
+
+  @Override
+  public boolean hasAnyTemplateTypesInternal() {
+    return referencedType.hasAnyTemplateTypes();
+  }
+
+  @Override
+  public TemplateTypeMap getTemplateTypeMap() {
+    return referencedType.getTemplateTypeMap();
   }
 
   @Override
@@ -210,11 +488,13 @@ public final class NamedType extends ProxyObjectType {
     return true;
   }
 
+
+
   @Override
   int recursionUnsafeHashCode() {
     // Recall that equality on `NamedType` uses only the name until successful resolution, then
     // delegates to the resolved type.
-    return isSuccessfullyResolved() ? super.recursionUnsafeHashCode() : nominalHashCode(this);
+    return isSuccessfullyResolved() ? referencedType.hashCode() : nominalHashCode(this);
   }
 
   /**
@@ -226,7 +506,8 @@ public final class NamedType extends ProxyObjectType {
       // In some cases (e.g. typeof(ns) when the actual type is just a literal object), a NamedType
       // is created solely for the purpose of naming an already-known type. When that happens,
       // there's nothing to look up, so just resolve the referenced type.
-      return super.resolveInternal(reporter);
+      setReferencedType(referencedType.resolve(reporter));
+      return this;
     }
 
     // TODO(user): Investigate whether it is really necessary to keep two
@@ -241,7 +522,7 @@ public final class NamedType extends ProxyObjectType {
     if (detectInheritanceCycle()) {
       handleTypeCycle(reporter);
     }
-    super.resolveInternal(reporter);
+    setReferencedType(referencedType.resolve(reporter));
     finishPropertyContinuations();
 
     JSType result = getReferencedType();
@@ -404,7 +685,7 @@ public final class NamedType extends ProxyObjectType {
     // the type has not been resolved yet, we need to wait till its
     // resolved before we can validate it.
     if (this.isResolved()) {
-      return super.setValidator(validator);
+      return referencedType.setValidator(validator);
     } else {
       this.validator = validator;
       return true;
@@ -450,5 +731,10 @@ public final class NamedType extends ProxyObjectType {
   @Override
   public <T> T visit(Visitor<T> visitor) {
     return visitor.caseNamedType(this);
+  }
+
+  @Override
+  <T> T visit(RelationshipVisitor<T> visitor, JSType that) {
+    return referencedType.visit(visitor, that);
   }
 }

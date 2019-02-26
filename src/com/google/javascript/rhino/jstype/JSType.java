@@ -779,6 +779,11 @@ public abstract class JSType implements Serializable {
               .getReferencedTypeInternal().checkEquivalenceHelper(
                       that, eqMethod, eqCache);
     }
+    else if (this instanceof NamedType) {
+      return ((NamedType) this)
+              .getReferencedTypeInternal().checkEquivalenceHelper(
+                      that, eqMethod, eqCache);
+    }
     else if (this instanceof ProxyObjectType) {
       return ((ProxyObjectType) this)
           .getReferencedTypeInternal().checkEquivalenceHelper(
@@ -793,6 +798,11 @@ public abstract class JSType implements Serializable {
     else if (that instanceof TemplateType) {
       return checkEquivalenceHelper(
               ((TemplateType) that).getReferencedTypeInternal(),
+              eqMethod, eqCache);
+    }
+    else if (that instanceof NamedType) {
+      return checkEquivalenceHelper(
+              ((NamedType) that).getReferencedTypeInternal(),
               eqMethod, eqCache);
     }
     else if (that instanceof ProxyObjectType) {
@@ -1654,6 +1664,12 @@ public abstract class JSType implements Serializable {
     else if (thatType instanceof TemplateType) {
       return thisType.isSubtype(
               ((TemplateType) thatType).getReferencedTypeInternal(),
+              implicitImplCache,
+              subtypingMode);
+    }
+    else if (thatType instanceof NamedType) {
+      return thisType.isSubtype(
+              ((NamedType) thatType).getReferencedTypeInternal(),
               implicitImplCache,
               subtypingMode);
     }
